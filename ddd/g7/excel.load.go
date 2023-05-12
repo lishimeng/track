@@ -1,6 +1,7 @@
 package g7
 
 import (
+	"context"
 	"fmt"
 	"github.com/kataras/iris/v12/x/errors"
 	"github.com/lishimeng/go-log"
@@ -16,34 +17,47 @@ func init() {
 }
 
 type DataHandler struct {
+	C   chan Request
+	ctx context.Context
 }
 
-func (d *DataHandler) Run() {
-	dir := "./data"
-	his, err := LoadExcelG7(dir+"/轨迹回放_荣B3419_2210384509.xlsx", "轨迹数据")
+// Req
+// 任务入口
+func (d *DataHandler) Req(r Request) {
+	if d.ctx == nil {
+		return
+	}
+	select {
+	case <-d.ctx.Done():
+	case d.C <- r:
+	}
+}
+
+func (d *DataHandler) Run(ctx context.Context) {
+
+	d.ctx = ctx
+	for {
+		select {
+		case <-d.ctx.Done():
+			return
+		case r := <-d.C:
+			err := do(r)
+			if err != nil {
+				log.Info(err)
+			}
+		}
+	}
+}
+
+func do(r Request) (err error) {
+	name := r.DataFile
+	filePath := model.FileDir + "/" + name
+	his, err := LoadExcelG7(filePath, r.DataSheet)
 	if err != nil {
 		log.Info(err)
 		return
 	}
-	log.Info(his.TruckNo)
-
-	//for index, p := range his.Points {
-	//	log.Info("[%d]%f:\t%f", index, p.Longitude, p.Latitude)
-	//}
-	log.Info(len(his.Points))
-	expectStart := model.Point{ // line 17
-		Time:      0,
-		Longitude: 116.0592921,
-		Latitude:  26.0399774,
-		Speed:     0,
-	}
-	expectEnd := model.Point{ // line 527
-		Time:      0,
-		Longitude: 120.4997383,
-		Latitude:  30.6260177,
-		Speed:     0,
-	}
-	s, err := summary(his, expectStart, expectEnd, 10)
+	s, err := summary(his, r.StartPoint, r.EndPoint, float64(r.Threshold))
 	if err != nil {
 		log.Info(err)
 		return
@@ -52,6 +66,7 @@ func (d *DataHandler) Run() {
 	log.Info("车牌:%s", s.TruckNo)
 	log.Info("轨迹点数:%d", s.TotalPoints)
 	log.Info("开始点:%d, 结束点:%d", s.StartPoint, s.EndPoint)
+	return
 }
 
 func LoadExcelG7(name string, sheet string) (truckHis model.TruckHis, err error) {

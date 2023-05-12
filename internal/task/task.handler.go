@@ -1,7 +1,9 @@
 package task
 
+import "context"
+
 type Task interface {
-	Run()
+	Run(ctx context.Context)
 }
 
 var Tasks []Task

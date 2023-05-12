@@ -5,10 +5,10 @@ import (
 	"github.com/lishimeng/track/internal/task"
 )
 
-func RunTask(_ context.Context) (err error) {
+func RunTask(ctx context.Context) (err error) {
 
 	for _, t := range task.Tasks {
-		go t.Run()
+		go t.Run(ctx)
 	}
 
 	return
