@@ -41,7 +41,7 @@ func (d *DataHandler) Run(ctx context.Context) {
 		case <-d.ctx.Done():
 			return
 		case r := <-d.C:
-			err := do(r)
+			err := Do(r)
 			if err != nil {
 				log.Info(err)
 			}
@@ -49,7 +49,7 @@ func (d *DataHandler) Run(ctx context.Context) {
 	}
 }
 
-func do(r Request) (err error) {
+func Do(r Request) (err error) {
 	name := r.DataFile
 	filePath := model.FileDir + "/" + name
 	his, err := LoadExcelG7(filePath, r.DataSheet)
