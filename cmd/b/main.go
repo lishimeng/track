@@ -6,9 +6,13 @@ import (
 )
 
 func main() {
-	err := buildscript.Generate("track",
-		"lishimeng",
-		"cmd/track/main.go", false)
+	err := buildscript.Generate("lishimeng",
+		buildscript.Application{
+			Name:    "track",
+			AppPath: "cmd/track",
+			HasUI:   false,
+		},
+	)
 	if err != nil {
 		fmt.Println(err)
 	} else {
